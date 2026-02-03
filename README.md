@@ -44,16 +44,40 @@ plt.imshow(glasspng[:,:,::-1]);plt.title("GLASSPNG")
 <img width="1218" height="405" alt="image" src="https://github.com/user-attachments/assets/c5b8ec2e-7789-4ced-afbd-0e59e5403a58" />
 
 ```
-glassBGR = glassPNG[:, :, 0:3]
+import cv2
+import matplotlib.pyplot as plt
+glasspng = cv2.imread("C:\\Users\\admin\\OneDrive\\Desktop\\DIPT\\glass.jpeg")
+b, g, r = cv2.split(glasspng)
+glass_bgr = cv2.merge((b, g, r))
+gray = cv2.cvtColor(glasspng, cv2.COLOR_BGR2GRAY)
 
-glassGray = cv2.cvtColor(glassBGR, cv2.COLOR_BGR2GRAY)
-_, glassMask1 = cv2.threshold(glassGray, 240, 255, cv2.THRESH_BINARY_INV)
-plt.figure(figsize=[15,15])
-plt.subplot(121);plt.imshow(glassBGR[:,:,::-1]);plt.title('Sunglass Color channels');
-plt.subplot(122);plt.imshow(glassMask1,cmap='gray');plt.title('Sunglass Alpha channel');
+_, glass_alpha = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+
+print("BGR shape:", glass_bgr.shape)
+print("Alpha shape:", glass_alpha.shape)
+
+
+plt.subplot(1,2,1)
+plt.imshow(cv2.cvtColor(glass_bgr, cv2.COLOR_BGR2RGB))
+plt.title("Sunglass BGR")
+plt.axis("off")
+
+plt.subplot(1,2,2)
+plt.imshow(glass_alpha, cmap="gray")
+plt.title("Generated Alpha Mask")
+plt.axis("off")
+
+plt.show()
 ```
+
+
 <img width="1374" height="347" alt="image" src="https://github.com/user-attachments/assets/460de9ba-6442-4147-bf03-2fd34728f18b" />
+
+
+
 ```
+
+
 import cv2
 import matplotlib.pyplot as plt
 
@@ -113,7 +137,12 @@ plt.axis("off")
 plt.title("Face with Glasses")
 plt.show()
 ```
+
+
 <img width="1388" height="847" alt="image" src="https://github.com/user-attachments/assets/cf955660-6d1c-4c0b-a9b2-a00f84e10d0a" />
+
+
+
 ```
 import matplotlib.pyplot as plt
 import cv2
@@ -132,4 +161,7 @@ plt.axis("off")
 
 plt.show()
 ```
+
+
+
 <img width="1376" height="700" alt="image" src="https://github.com/user-attachments/assets/bfaa7269-3f83-48aa-a71c-ae565373f6a2" />
