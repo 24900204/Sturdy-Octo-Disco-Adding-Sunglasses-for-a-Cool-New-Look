@@ -77,65 +77,46 @@ plt.show()
 
 ```
 
+glass_w = int(face_w * 0.60)
+glass_h = int(glass_w * glassBGR.shape[0] / glassBGR.shape[1])
 
-import cv2
-import matplotlib.pyplot as plt
+glassBGR = cv2.resize(glassBGR, (glass_w, glass_h))
 
-face_img = cv2.imread(r"C:\Users\admin\Downloads\rithika photo.jpeg")
-face_gray = cv2.cvtColor(face_img, cv2.COLOR_BGR2GRAY)
+glass_gray = cv2.cvtColor(glassBGR, cv2.COLOR_BGR2GRAY)
+_, glassMask = cv2.threshold(glass_gray, 240, 255, cv2.THRESH_BINARY_INV)
 
-glass_bgr = cv2.imread(r"C:\Users\admin\Downloads\glass.jpeg")
-gray = cv2.cvtColor(glass_bgr, cv2.COLOR_BGR2GRAY)
-_, glass_alpha = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+glassMask = cv2.merge([glassMask, glassMask, glassMask])
+glassMask = glassMask / 255.0  # normalize
 
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
-eyes = eye_cascade.detectMultiScale(face_gray, 1.2, 5)
+x1 = int(face_w * 0.20)
+y1 = int(face_h * 0.28)
 
-h, w = face_img.shape[:2]
+x2 = x1 + glass_w
+y2 = y1 + glass_h
 
-eyes = [e for e in eyes if e[1] < h // 2]
+faceWithGlasses = faceImage.copy()
+eyeROI = faceWithGlasses[y1:y2, x1:x2]
 
-eyes = sorted(eyes, key=lambda x: -x[2])[:2]
+eyeROI_f    = eyeROI.astype(np.float32)
+glassBGR_f  = glassBGR.astype(np.float32)
+glassMask_f = glassMask.astype(np.float32)
 
-if len(eyes) == 2:
-    eyes = sorted(eyes, key=lambda x: x[0])
-    x1, y1, w1, h1 = eyes[0]
-    x2, y2, w2, h2 = eyes[1]
+maskedEye   = cv2.multiply(eyeROI_f, (1 - glassMask_f))
+maskedGlass = cv2.multiply(glassBGR_f, glassMask_f)
 
-    left_eye = (x1 + w1 // 2, y1 + h1 // 2)
-    right_eye = (x2 + w2 // 2, y2 + h2 // 2)
+eyeFinal = cv2.add(maskedEye, maskedGlass)
+eyeFinal = np.clip(eyeFinal, 0, 255).astype(np.uint8)
 
-    eye_distance = int(((right_eye[0] - left_eye[0]) ** 2 + (right_eye[1] - left_eye[1]) ** 2) ** 0.5)
-    glasses_w = int(eye_distance * 2.0)
-    glasses_h = int(glass_bgr.shape[0] * (glasses_w / glass_bgr.shape[1]))
-
-    glasses_resized = cv2.resize(glass_bgr, (glasses_w, glasses_h))
-    mask_resized = cv2.resize(glass_alpha, (glasses_w, glasses_h))
-
-    center_x = (left_eye[0] + right_eye[0]) // 2
-    center_y = (left_eye[1] + right_eye[1]) // 2
-    x_offset = center_x - glasses_w // 2 + 20   # move right
-    y_offset = center_y - glasses_h // 2 - 27   # move up
-
-    y1, y2 = max(0, y_offset), min(h, y_offset + glasses_h)
-    x1, x2 = max(0, x_offset), min(w, x_offset + glasses_w)
-
-    mask_resized = mask_resized[0:y2 - y1, 0:x2 - x1]
-    glasses_resized = glasses_resized[0:y2 - y1, 0:x2 - x1]
-    roi = face_img[y1:y2, x1:x2]
-
-    mask_inv = cv2.bitwise_not(mask_resized)
-    bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
-    fg = cv2.bitwise_and(glasses_resized, glasses_resized, mask=mask_resized)
-
-    combined = cv2.add(bg, fg)
-    face_img[y1:y2, x1:x2] = combined
+faceWithGlasses[y1:y2, x1:x2] = eyeFinal
 
 
-plt.imshow(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
-plt.axis("off")
-plt.title("Face with Glasses")
+plt.figure(figsize=(6,8))
+plt.imshow(cv2.cvtColor(faceWithGlasses, cv2.COLOR_BGR2RGB))
+plt.title("Final Output – Sunglasses on Eyes ")
+plt.axis("on")
 plt.show()
+
+
 ```
 
 
@@ -144,24 +125,52 @@ plt.show()
 
 
 ```
-import matplotlib.pyplot as plt
-import cv2
 
-plt.figure(figsize=(10,5))
+faceWithGlassesArithmetic = faceImage.copy()
 
-plt.subplot(1, 2, 1)
-plt.imshow(cv2.cvtColor(faceimage, cv2.COLOR_BGR2RGB))
+face_h, face_w, _ = faceWithGlassesArithmetic.shape
+
+glass_w = int(face_w * 0.60)
+glass_h = int(glass_w * glassBGR.shape[0] / glassBGR.shape[1])
+glass_resized = cv2.resize(glassBGR, (glass_w, glass_h))
+
+glass_gray = cv2.cvtColor(glass_resized, cv2.COLOR_BGR2GRAY)
+_, glassMask = cv2.threshold(glass_gray, 240, 255, cv2.THRESH_BINARY_INV)
+glassMask = cv2.merge([glassMask, glassMask, glassMask]) / 255.0
+
+x1 = int(face_w * 0.20)
+y1 = int(face_h * 0.28)
+x2 = x1 + glass_w
+y2 = y1 + glass_h
+
+eyeROI = faceWithGlassesArithmetic[y1:y2, x1:x2]
+
+eyeROI_f    = eyeROI.astype(np.float32)
+glass_f     = glass_resized.astype(np.float32)
+glassMask_f = glassMask.astype(np.float32)
+
+maskedEye   = cv2.multiply(eyeROI_f, 1 - glassMask_f)
+maskedGlass = cv2.multiply(glass_f, glassMask_f)
+eyeFinal    = cv2.add(maskedEye, maskedGlass)
+eyeFinal    = np.clip(eyeFinal, 0, 255).astype(np.uint8)
+
+faceWithGlassesArithmetic[y1:y2, x1:x2] = eyeFinal
+
+plt.figure(figsize=[10,10])
+plt.subplot(121)
+plt.imshow(cv2.cvtColor(faceImage, cv2.COLOR_BGR2RGB))
 plt.title("Original Image")
 plt.axis("off")
 
-plt.subplot(1, 2, 2)
-plt.imshow(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))
-plt.title("With Glasses")
+plt.subplot(122)
+plt.imshow(cv2.cvtColor(faceWithGlassesArithmetic, cv2.COLOR_BGR2RGB))
+plt.title("With Sunglasses")
 plt.axis("off")
-
 plt.show()
+
 ```
+<img width="1372" height="741" alt="image" src="https://github.com/user-attachments/assets/b9c0526e-bbdf-48f1-8360-db13b4184038" />
 
 
 
-<img width="1376" height="700" alt="image" src="https://github.com/user-attachments/assets/bfaa7269-3f83-48aa-a71c-ae565373f6a2" />
+
